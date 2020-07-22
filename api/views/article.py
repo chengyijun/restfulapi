@@ -2,6 +2,7 @@ from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView,
 
 from api.models import Articles
 from api.myserializers.article import ArticleSerializer, ArticleSerializerForList
+from api.utils.auth import MyGeneralAuthentication
 from api.utils.myfilter import MyBaseFilter
 from api.utils.mypagination import MyPageNumberPagination
 
@@ -40,3 +41,26 @@ class ArticleDetailView(RetrieveAPIView, UpdateAPIView, DestroyAPIView):
     serializer_class = ArticleSerializerForList
     # django 默认的主键形参为pk 如果改用其他 应通过 lookup_field 显试指定出来
     lookup_field = 'id'
+    # 指定登录认证器
+    authentication_classes = [MyGeneralAuthentication]
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        # 此处验证是否登录  如果登录了 就可以更新浏览记录
+        if not request.auth:
+            return response
+
+        # 检查是否浏览记录已经存在 不用再添加了
+        # 拿到该文章所有的浏览记录
+        id = kwargs.get('id')
+        article = Articles.objects.filter(id=id).first()
+        user = request.user
+
+        if user in [u for u in article.viwers.all()]:
+            return response
+
+        # 向中间表添加数据  也就是浏览记录
+        article.viwers.add(user)
+
+        return response
