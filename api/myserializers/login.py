@@ -27,3 +27,5 @@ class CodeValidator(object):
 class LoginSerializer(serializers.Serializer):
     phone = serializers.CharField(label='手机号', validators=[PasswordValidator()])
     code = serializers.CharField(label='验证码', validators=[CodeValidator()])
+    nickname = serializers.CharField(label='昵称')
+    avatar = serializers.CharField(label='用户图像')

@@ -1,7 +1,6 @@
 import random
 import uuid
 
-from django_redis import get_redis_connection
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -27,35 +26,40 @@ class LoginView(APIView):
                              })
         # 数据验证通过 执行登录判断
         print(ser.validated_data)
-        conn = get_redis_connection('default')
-        phone = ser.validated_data.get('phone', )
-        if not conn.get(phone, ):
-            return Response({'status': 0,
-                             'data': {
-                                 'token': '',
-                                 'phone': ''
-                             },
-                             'message': '验证码过期'
-                             })
-        if conn.get(phone, ).decode('utf-8') != ser.validated_data.get('code', ):
-            return Response({'status': 0,
-                             'data': {
-                                 'token': '',
-                                 'phone': ''
-                             },
-                             'message': '验证码不正确'
-                             })
+        phone = ser.validated_data.get('phone', None)
+        # conn = get_redis_connection('default')
+        # if not conn.get(phone, ):
+        #     return Response({'status': 0,
+        #                      'data': {
+        #                          'token': '',
+        #                          'phone': ''
+        #                      },
+        #                      'message': '验证码过期'
+        #                      })
+        # if conn.get(phone, ).decode('utf-8') != ser.validated_data.get('code', ):
+        #     return Response({'status': 0,
+        #                      'data': {
+        #                          'token': '',
+        #                          'phone': ''
+        #                      },
+        #                      'message': '验证码不正确'
+        #                      })
         token = str(uuid.uuid4())
 
         # 登录成功 输入入库
         user, _ = Users.objects.get_or_create(phone=phone)
+        nickname = request.data.get('nickname')
+        avatar = request.data.get('avatar')
+
         user.token = token
+        user.nickname = nickname
+        user.avatar = avatar
         user.save()
 
         return Response({'status': 1,
                          'data': {
                              'token': token,
-                             'phone': request.data.get('phone', )
+                             'phone': request.data.get('phone')
                          },
                          'message': '登录成功'
                          })
